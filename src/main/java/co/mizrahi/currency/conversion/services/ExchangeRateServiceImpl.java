@@ -10,10 +10,14 @@ import co.mizrahi.currency.conversion.repositories.UserRequestLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static java.util.Objects.isNull;
 
 /**
  * Created at 14/09/2024
@@ -33,7 +37,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     private final UserRequestLogRepository userRequestLogRepository;
 
     @Override
-    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey) {
+    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey) throws BadRequestException {
         ExchangeRates rates;
         try {
             rates = this.getExchangeRates(from);
@@ -41,13 +45,8 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
             log.error(WRONG_CURRENCY_CODE_FOR, from);
             throw new RuntimeException(e);
         }
-        BigDecimal rate;
-        try {
-            rate = rates.getData().getRates().get(to);
-        } catch (Exception e) {
-            log.error(WRONG_CURRENCY_CODE_FOR, to);
-            throw new RuntimeException(e);
-        }
+        BigDecimal rate = Optional.ofNullable(rates.getData().getRates().get(to))
+                .orElseThrow(() -> new BadRequestException("Wrong currency code for: " +  to));
         CurrencyConversionResponse currencyConversionResponse = CurrencyConversionResponse.builder()
                 .from(from)
                 .to(to)

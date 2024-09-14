@@ -1,6 +1,7 @@
 package co.mizrahi.currency.conversion.services;
 
 import co.mizrahi.currency.conversion.models.CurrencyConversionResponse;
+import org.apache.coyote.BadRequestException;
 
 import java.math.BigDecimal;
 
@@ -10,5 +11,5 @@ import java.math.BigDecimal;
  * @author David Mizrahi
  */
 public interface ExchangeRateService {
-    CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey);
+    CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey) throws BadRequestException;
 }
