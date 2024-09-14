@@ -3,7 +3,7 @@ spring:
     name: currency-conversion-service
   data:
     mongodb:
-      uri: mongodb+srv://treat:homeAssignmen-tzfcqpn@cluster0.hefibvo.mongodb.net/CurrencyConversions?retryWrites=true&w=majority&appName=Cluster0
+      uri: ${MONGO_URI}
 
 request:
   limit:
