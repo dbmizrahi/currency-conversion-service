@@ -167,8 +167,10 @@ This service uses **Spring Security** for authentication and request validation.
 ---
 
 ### **Project Structure**
+- **`/clients`**: Contains client classes like `CoinbaseFeignClient` .
 - **`/config`**: Contains configuration classes like `ApiKeyFilter` and `SecurityConfig`.
 - **`/controllers`**: REST controllers for handling API requests.
-- **`/repositories`**: MongoDB repositories for interacting with the database.
 - **`/entities`**: Contains MongoDB entity classes, such as `UserKey` and `ApiRequestLog`.
+- **`/models`**: Contains MongoDB entity classes, such as `ExchangeRates` and `CurrencyConversionResponse`.
+- **`/repositories`**: MongoDB repositories for interacting with the database.
 - **`/services`**: Service layer for business logic (if applicable).
