@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: currency-conversion-service
+
+request:
+  limit:
+    weekday: 100
+    weekend: 200

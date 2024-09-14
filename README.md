@@ -1,6 +1,6 @@
 ### Objective
 
-Using Java and Spring, your task is to build a currency conversion service that includes FIAT and cryptocurrencies.
+Using Java and Spring Boot, your task is to build a currency conversion service that includes FIAT and cryptocurrencies.
 
 ### Brief
 
@@ -16,7 +16,7 @@ ETH
 -   Implement assignment using:
 
     -   Language: **Java**
-    -   Framework: **Spring**
+    -   Framework: **Spring Boot**
 
 -   We recommend using the Coinbase API for exchange rates:
 
