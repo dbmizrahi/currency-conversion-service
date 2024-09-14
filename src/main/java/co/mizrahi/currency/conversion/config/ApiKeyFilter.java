@@ -2,22 +2,25 @@ package co.mizrahi.currency.conversion.config;
 
 import co.mizrahi.currency.conversion.entities.ApiRequestLog;
 import co.mizrahi.currency.conversion.entities.UserKey;
-import co.mizrahi.currency.conversion.entities.UserRequestLog;
 import co.mizrahi.currency.conversion.repositories.ApiRequestLogRepository;
 import co.mizrahi.currency.conversion.repositories.UserKeyRepository;
-import co.mizrahi.currency.conversion.repositories.UserRequestLogRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Optional;
 
 import static java.util.Objects.isNull;
@@ -27,6 +30,7 @@ import static java.util.Objects.isNull;
  *
  * @author David Mizrahi
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ApiKeyFilter extends OncePerRequestFilter {
@@ -34,18 +38,20 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     private final UserKeyRepository userKeyRepository;
     private final ApiRequestLogRepository apiRequestLogRepository;
 
-    @Value("${limit.weekday}")
+    @Value("${request.limit.weekday}")
     private int weekdayLimit;
 
-    @Value("${limit.weekend}")
+    @Value("${request.limit.weekend}")
     private int weekendLimit;
 
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            @NotNull HttpServletResponse response,
+            @NotNull FilterChain filterChain)
             throws ServletException, IOException {
         String path = request.getRequestURI();
-        logger.info("Incoming request path: " + path);
+        log.info("Incoming request path: {}", path);
         if (path.startsWith("/public")) {
             filterChain.doFilter(request, response);
             return;
@@ -60,21 +66,26 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         DayOfWeek dayOfWeek = today.getDayOfWeek();
         boolean isWeekend = (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY);
         int maxRequests = isWeekend ? weekendLimit : weekdayLimit;
-        Optional<ApiRequestLog> log = this.apiRequestLogRepository.findByApiKeyAndRequestDate(apiKey, today);
-        int requestCount = log.map(ApiRequestLog::getRequestCount).orElse(0);
+
+        Optional<ApiRequestLog> requestLog = this.apiRequestLogRepository.findByApiKeyAndRequestDate(apiKey, today);
+        Integer requestCount = requestLog.map(ApiRequestLog::getRequestCount).orElse(0);
+
         if (requestCount >= maxRequests) {
-            logger.warn("API key has exceeded the allowed limit of " + maxRequests + " requests");
-            response.sendError(HttpServletResponse.SC_GONE, "Request limit exceeded");
+            log.warn("API key has exceeded the allowed limit of {} requests", maxRequests);
+            response.sendError(HttpServletResponse.SC_GONE, "Request limit exceeded. Request count: " + requestCount);
             return;
         }
-        ApiRequestLog requestLog = log.orElse(ApiRequestLog.builder()
+        ApiRequestLog requestLogUpdate = requestLog.orElse(ApiRequestLog.builder()
                 .apiKey(apiKey)
                 .requestDate(today)
                 .requestCount(0)
                 .build());
-        requestLog.setRequestCount(requestLog.getRequestCount() + 1);
-        apiRequestLogRepository.save(requestLog);
-        logger.info("API Key is valid and request count is within the limit");
+        requestLogUpdate.setRequestCount(requestLogUpdate.getRequestCount() + 1);
+        this.apiRequestLogRepository.save(requestLogUpdate);
+        log.info("API Key is valid and request count is within the limit: {}", requestCount);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                apiKey, null, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);
     }
 }

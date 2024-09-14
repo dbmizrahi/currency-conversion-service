@@ -27,9 +27,6 @@ public class UserRequestLog {
     @Id
     private String id;
     private String username;
-    private String sourceCurrency;
-    private String targetCurrency;
-    private BigDecimal amount;
     private LocalDateTime timestamp;
     private CurrencyConversionResponse currencyConversionResponse;
 }

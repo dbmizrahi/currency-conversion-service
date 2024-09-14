@@ -1,14 +1,19 @@
 package co.mizrahi.currency.conversion.services;
 
 import co.mizrahi.currency.conversion.clients.CoinbaseFeignClient;
+import co.mizrahi.currency.conversion.entities.UserKey;
+import co.mizrahi.currency.conversion.entities.UserRequestLog;
 import co.mizrahi.currency.conversion.models.CurrencyConversionResponse;
 import co.mizrahi.currency.conversion.models.ExchangeRates;
+import co.mizrahi.currency.conversion.repositories.UserKeyRepository;
+import co.mizrahi.currency.conversion.repositories.UserRequestLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * Created at 14/09/2024
@@ -22,11 +27,13 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
 
     public static final String WRONG_CURRENCY_CODE_FOR = "Wrong currency code for: {}";
 
+    private final UserKeyRepository userKeyRepository;
     private final CoinbaseFeignClient coinbaseFeignClient;
     private final AuthenticationService authenticationService;
+    private final UserRequestLogRepository userRequestLogRepository;
 
     @Override
-    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount) {
+    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey) {
         ExchangeRates rates;
         try {
             rates = this.getExchangeRates(from);
@@ -41,12 +48,20 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
             log.error(WRONG_CURRENCY_CODE_FOR, to);
             throw new RuntimeException(e);
         }
-        return CurrencyConversionResponse.builder()
+        CurrencyConversionResponse currencyConversionResponse = CurrencyConversionResponse.builder()
                 .from(from)
                 .to(to)
                 .amount(amount)
                 .result(amount.multiply(rate))
                 .build();
+        UserKey userKey = this.userKeyRepository.findByApiKey(apiKey);
+        UserRequestLog userRequestLog = UserRequestLog.builder()
+                .currencyConversionResponse(currencyConversionResponse)
+                .timestamp(LocalDateTime.now())
+                .username(userKey.getEmail())
+                .build();
+        this.userRequestLogRepository.save(userRequestLog);
+        return currencyConversionResponse;
     }
 
     @SneakyThrows

@@ -9,3 +9,9 @@ request:
   limit:
     weekday: 100
     weekend: 200
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG

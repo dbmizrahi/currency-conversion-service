@@ -23,11 +23,12 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/api/exchange-rates").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }
