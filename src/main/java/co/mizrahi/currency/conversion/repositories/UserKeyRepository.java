@@ -11,5 +11,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface UserKeyRepository extends MongoRepository<UserKey, String> {
-    UserKey findByEmail(String email);
+    UserKey findByApiKey(String apiKey);
 }

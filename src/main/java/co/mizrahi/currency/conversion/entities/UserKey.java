@@ -1,5 +1,6 @@
 package co.mizrahi.currency.conversion.entities;
 
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +22,8 @@ import org.springframework.data.annotation.Id;
 public class UserKey {
 
     @Id
-    private String email;  // The user's email will be used as the primary key in the MongoDB collection.
+    private String email;
+
+    @Indexed(unique = true)
     private String apiKey;
 }
