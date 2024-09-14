@@ -5,6 +5,7 @@ import co.mizrahi.currency.conversion.services.ExchangeRateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,14 +16,16 @@ import java.math.BigDecimal;
  *
  * @author David Mizrahi
  */
-@RestController("/api/convert")
+@RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
-public class CurrencyConversionServiceController {
+public class ExchangeRatesController {
 
     private final ExchangeRateService exchangeRateService;
 
-    @GetMapping
+    @GetMapping("/exchange-rates")
     public ResponseEntity<CurrencyConversionResponse> convert(@RequestParam String from, @RequestParam String to, @RequestParam BigDecimal amount) {
-        this.exchangeRateService.getConversionResponse(from, to, amount);
+        CurrencyConversionResponse conversionResponse = this.exchangeRateService.getConversionResponse(from, to, amount);
+        return ResponseEntity.ok(conversionResponse);
     }
 }

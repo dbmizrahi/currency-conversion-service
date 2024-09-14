@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -32,7 +33,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                 .apiKey(apiKey)
                 .build();
         userKeyRepository.save(userKey);
-        return ResponseEntity.ofNullable(apiKey);
+        return ResponseEntity.created(URI.create("/public/register")).body(apiKey);
     }
 
     private String generateApiKey() {
