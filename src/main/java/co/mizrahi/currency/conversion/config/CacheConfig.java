@@ -32,6 +32,12 @@ public class CacheConfig {
                 .maximumSize(maximumSize);
     }
 
+    /**
+     * Caching for Coinbase Authentication token
+     * TTL for 2 minutes that matches the actual validity
+     * End of TTL leads to re-authentication
+     * @return Caffeine cache tuple
+     */
     @Bean
     public Caffeine<Object, Object> coinbaseAuthCacheConfig() {
         return Caffeine.newBuilder()
