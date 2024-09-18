@@ -17,8 +17,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static java.util.Objects.isNull;
-
 /**
  * Created at 14/09/2024
  *
@@ -29,7 +27,9 @@ import static java.util.Objects.isNull;
 @RequiredArgsConstructor
 public class ExchangeRateServiceImpl implements ExchangeRateService {
 
-    public static final String WRONG_CURRENCY_CODE_FOR = "Wrong currency code for: {}";
+    public static final String PLACEHOLDER = "{}";
+    public static final String CURRENCY_CODE_FOR = "Wrong currency code for: ";
+    public static final String WRONG_CURRENCY_CODE_FOR = CURRENCY_CODE_FOR + PLACEHOLDER;
 
     private final UserKeyRepository userKeyRepository;
     private final CoinbaseFeignClient coinbaseFeignClient;
@@ -46,7 +46,7 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
             throw new RuntimeException(e);
         }
         BigDecimal rate = Optional.ofNullable(rates.getData().getRates().get(to))
-                .orElseThrow(() -> new BadRequestException("Wrong currency code for: " +  to));
+                .orElseThrow(() -> new BadRequestException(CURRENCY_CODE_FOR +  to));
         CurrencyConversionResponse currencyConversionResponse = CurrencyConversionResponse.builder()
                 .from(from)
                 .to(to)
