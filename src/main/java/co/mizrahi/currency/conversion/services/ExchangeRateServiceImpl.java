@@ -45,20 +45,12 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
         }
         BigDecimal rate = Optional.ofNullable(rates.getData().getRates().get(to))
                 .orElseThrow(() -> new BadRequestException(CURRENCY_CODE_FOR +  to));
-        CurrencyConversionResponse currencyConversionResponse = CurrencyConversionResponse.builder()
+        return CurrencyConversionResponse.builder()
                 .from(from)
                 .to(to)
                 .amount(amount)
                 .result(amount.multiply(rate))
                 .build();
-        var userKey = (UserKey) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        UserRequestLog userRequestLog = UserRequestLog.builder()
-                .currencyConversionResponse(currencyConversionResponse)
-                .timestamp(LocalDateTime.now())
-                .username(userKey.getEmail())
-                .build();
-//        this.userRequestLogRepository.save(userRequestLog);
-        return currencyConversionResponse;
     }
 
     @SneakyThrows
