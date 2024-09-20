@@ -1,5 +1,6 @@
 package co.mizrahi.currency.conversion.services;
 
+import co.mizrahi.currency.conversion.config.CDPJsonProperties;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.*;
 import com.nimbusds.jwt.*;
@@ -11,6 +12,8 @@ import java.util.Map;
 import java.util.HashMap;
 import java.time.Instant;
 
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
@@ -22,34 +25,39 @@ import java.security.PrivateKey;
 import java.security.Security;
 
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 /**
  * Created at 14/09/2024
- *
+ * https://docs.cdp.coinbase.com/coinbase-app/docs/api-key-authentication#code-samples
  * @author David Mizrahi
  */
 @Component
+@RequiredArgsConstructor
 public class CoinbaseAuthenticationService implements AuthenticationService {
 
     public static final String BROKERAGE_ACCOUNTS = "api.coinbase.com/api/v3/brokerage/accounts";
     public static final String REQUEST_METHOD = "GET";
     public static final String URI = REQUEST_METHOD + " " + BROKERAGE_ACCOUNTS;
 
-    @Value("${NAME}")
-    String name;
+    private String name;
+    private String key;
 
-    @Value("${PRIVATE_KEY}")
-    private String privateKeyPEM;
+    private final CDPJsonProperties jsonProperties;
+
+    @PostConstruct
+    void init() {
+        this.name = this.jsonProperties.getName();
+        this.key = this.jsonProperties.getPrivateKey();
+    }
 
     @Override
     @Cacheable(value = "coinbaseAuthCache", key = "'coinbaseJWT'")
     public String authenticate() throws Exception {
         Security.addProvider(new BouncyCastleProvider());
         Map<String, Object> header = this.getHeader();
-        Map<String, Object> data = this.getData(URI);
+        Map<String, Object> data = this.getData();
         PrivateKey privateKey = this.getPrivateKey();
         ECPrivateKey ecPrivateKey = this.getEcPrivateKey(privateKey);
         SignedJWT signedJWT = this.getSignedJWT(data, header, ecPrivateKey);
@@ -79,7 +87,7 @@ public class CoinbaseAuthenticationService implements AuthenticationService {
     }
 
     private PrivateKey getPrivateKey() throws Exception {
-        PEMParser pemParser = new PEMParser(new StringReader(privateKeyPEM));
+        PEMParser pemParser = new PEMParser(new StringReader(this.key.replace("\"", "")));
         JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
         Object object = pemParser.readObject();
         PrivateKey privateKey;
@@ -96,13 +104,13 @@ public class CoinbaseAuthenticationService implements AuthenticationService {
     }
 
     @NotNull
-    private Map<String, Object> getData(String uri) {
+    private Map<String, Object> getData() {
         Map<String, Object> data = new HashMap<>();
         data.put("iss", "cdp");
         data.put("nbf", Instant.now().getEpochSecond());
         data.put("exp", Instant.now().getEpochSecond() + 120);
-        data.put("sub", name);
-        data.put("uri", uri);
+        data.put("sub", this.name);
+        data.put("uri", URI);
         return data;
     }
 
@@ -111,7 +119,7 @@ public class CoinbaseAuthenticationService implements AuthenticationService {
         Map<String, Object> header = new HashMap<>();
         header.put("alg", "ES256");
         header.put("typ", "JWT");
-        header.put("kid", name);
+        header.put("kid", this.name);
         header.put("nonce", String.valueOf(Instant.now().getEpochSecond()));
         return header;
     }

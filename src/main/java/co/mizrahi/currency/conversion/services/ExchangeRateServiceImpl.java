@@ -5,12 +5,11 @@ import co.mizrahi.currency.conversion.entities.UserKey;
 import co.mizrahi.currency.conversion.entities.UserRequestLog;
 import co.mizrahi.currency.conversion.models.CurrencyConversionResponse;
 import co.mizrahi.currency.conversion.models.ExchangeRates;
-import co.mizrahi.currency.conversion.repositories.UserKeyRepository;
-import co.mizrahi.currency.conversion.repositories.UserRequestLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -31,13 +30,12 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
     public static final String CURRENCY_CODE_FOR = "Wrong currency code for: ";
     public static final String WRONG_CURRENCY_CODE_FOR = CURRENCY_CODE_FOR + PLACEHOLDER;
 
-    private final UserKeyRepository userKeyRepository;
     private final CoinbaseFeignClient coinbaseFeignClient;
     private final AuthenticationService authenticationService;
-    private final UserRequestLogRepository userRequestLogRepository;
 
     @Override
-    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount, String apiKey) throws BadRequestException {
+    @SneakyThrows
+    public CurrencyConversionResponse getConversionResponse(String from, String to, BigDecimal amount) {
         ExchangeRates rates;
         try {
             rates = this.getExchangeRates(from);
@@ -53,13 +51,13 @@ public class ExchangeRateServiceImpl implements ExchangeRateService {
                 .amount(amount)
                 .result(amount.multiply(rate))
                 .build();
-        UserKey userKey = this.userKeyRepository.findByApiKey(apiKey);
+        var userKey = (UserKey) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         UserRequestLog userRequestLog = UserRequestLog.builder()
                 .currencyConversionResponse(currencyConversionResponse)
                 .timestamp(LocalDateTime.now())
                 .username(userKey.getEmail())
                 .build();
-        this.userRequestLogRepository.save(userRequestLog);
+//        this.userRequestLogRepository.save(userRequestLog);
         return currencyConversionResponse;
     }
 
